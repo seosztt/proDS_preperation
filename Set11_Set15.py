@@ -24,8 +24,10 @@ Created on 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
 
-
+data11=pd.read_csv('DataSet_11.csv')
+data11.info()
 
 #%%
 
@@ -36,14 +38,25 @@ Created on 2021
 # - 3년 연속 데이터가 기록되지 않은 국가 데이터는 제외하고 이를 향후 분석에서
 # 활용하시오.(답안 예시) 1
 # =============================================================================
+q1=data11.copy()
+len(q1.Country.unique())
+q1.year.unique()
 
 
+c1=q1[q1.year==2015]['Country']
+c2=q1[q1.year==2016]['Country']
+c3=q1[q1.year==2017]['Country']
 
+q1_out=q1[q1.Country.isin(c1) & q1.Country.isin(c2) & q1.Country.isin(c3)]
+len(q1_out.Country.unique())
 
+q1_out
+#답: 20
 
+q1=data11.Country.value_counts()
+len(q1[q1<3])
 
-
-
+basetable=data11[data11.Country.isin(q1[q1>=3].index)]
 #%%
 
 # =============================================================================
@@ -56,16 +69,27 @@ Created on 2021
 # 12월까지의 매출 총액을 의미한다. (답안 예시) Korea, Japan, China
 # =============================================================================
 
+q2=q1_out.copy()
 
+country_list=q2.Country.unique()
 
+ratio_list=[]
+for i in country_list:
+    temp=(float(q2[(q2.Country == i) & (q2.year == 2017)]['Happiness_Score'])
+          - float(q2[(q2.Country == i) & (q2.year == 2015)]['Happiness_Score']))/2    
+    ratio_list.append([i, temp])
 
+ratio=pd.DataFrame(ratio_list, columns=('country', 'ratio'))
 
+ratio.sort_values(by='ratio', ascending=False)
 
+# 답: Latvia, Romania, Togo
 
+q2=pd.pivot_table(basetable, index='Country', columns='year', values='Happiness_Score')
 
+q2['ratio'] = (q2[2017] - q2[2015])/2
 
-
-
+q2['ratio'].nlargest(3).index
 
 
 #%%
@@ -82,16 +106,26 @@ Created on 2021
 # from statsmodels.formula.api import ols
 # from statsmodels.stats.anova import anova_lm
 
+from scipy.stats import f_oneway # 분산분석 진행
+from statsmodels.formula.api import ols # 분산분석 진행
+from statsmodels.stats.anova import anova_lm # 분산분석표
+from statsmodels.stats.multicomp import pairwise_tukeyhsd # 사후검정
 
 
+q2_1=pd.pivot_table(basetable, index='Country', columns='year', values='Happiness_Score')
 
+f_oneway(q2_1[2015], q2_1[2016], q2_1[2017])
 
+aov=ols('Happiness_Score~C(year)', data=basetable).fit()
+aov.summary()
 
+anova_lm(aov)['F'][0]
 
+# 답: 0.0042
 
+comp_out=pairwise_tukeyhsd(basetable['Happiness_Score'], basetable['year'])
 
-
-
+print(comp_out)
 
 #%%
 
@@ -115,8 +149,10 @@ Created on 2021
 # 정보 누락 / String
 # =============================================================================
 # =============================================================================
+import pandas as pd
 
-
+data12=pd.read_csv('DataSet_12.csv')
+data12.info()
 #%%
 
 # =============================================================================
@@ -125,10 +161,14 @@ Created on 2021
 # - 상관계수는 반올림하여 소수점 셋째 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
+data12.corr()
 
+# 답:0.797
 
+num_list=data12.columns[data12.dtypes != 'object']
+q1=data12[num_list].corr().drop('Read_Book_per_Year')['Read_Book_per_Year'].abs()
 
-
+q1.nlargest(1)
 
 #%%
 
@@ -140,10 +180,28 @@ Created on 2021
 # - 유의 확률은 반올림하여 소수점 셋째 자리까지 기술한다. (답안 예시) 0.123
 # =============================================================================
 
+data12.Education_Level.unique()
+Edu1=data12[data12.Education_Level.isin(['석사', '박사'])]
+Edu0=data12[data12.Education_Level.isin(['학사', '고졸'])]
 
+from scipy.stats import ttest_ind
 
+ttest_ind(Edu1['Read_Book_per_Year'], Edu0['Read_Book_per_Year'], equal_var=True)
+# 등분산 가정 놓치지 말 것.
 
+# 답: 0.269
 
+data12['Education_Level'].value_counts()
+
+q2=data12.copy()
+q2['group'] = q2['Education_Level'].isin(['석사', '박사']) + 0
+
+group1=q2[q2.group==1]['Read_Book_per_Year']
+group0=q2[q2.group==0]['Read_Book_per_Year']
+
+from scipy.stats import ttest_ind
+
+ttest_ind(group1, group0, equal_var=True)
 
 #%%
 
@@ -159,12 +217,29 @@ Created on 2021
 # (참고)
 # from statsmodels.formula.api import ols
 
+q3=data12.copy()
+q3=q3[q3.Income_Range.isin(['A','B','C','D','E'])]
+q3=q3[q3.Education_Level.isin(['학사','석사','박사'])]
 
+from statsmodels.formula.api import ols
+ols1=ols('Read_Book_per_Year~Age+is_Married+Dependent_Count', q3).fit()
 
+ols1.summary()
 
+ols1.params['Age']
 
+#답 8
 
+x_list=data12.columns[data12.dtypes != 'object'].drop('Read_Book_per_Year')
 
+from sklearn.linear_model import LinearRegression
+
+q3=data12[~data12.Education_Level.isin(['고졸'])]
+q3=q3[~q3.Income_Range.isin(['X'])]
+
+lm=LinearRegression().fit(q3[x_list], q3['Read_Book_per_Year'])
+
+lm.coef_[0]*(40-30)
 
 
 
@@ -367,10 +442,10 @@ Created on 2021
 
 # =============================================================================
 # =============================================================================
-# # 문제 05 유형(Dataset_05_Mart_POS.csv /  이용)
+# # 문제 15 유형(Dataset_15_Mart_POS.csv /  이용)
 #
 # =============================================================================
-# Dataset_05_Mart_POS.csv 
+# Dataset_15_Mart_POS.csv 
 # 구분자 : comma(“,”), 20488 Rows, 3 Columns, UTF-8 인코딩
 # =============================================================================
 #
@@ -383,7 +458,7 @@ Created on 2021
 # itemDescription / 상품명 / String
 
 # =============================================================================
-# Dataset_05_item_list.csv 
+# Dataset_15_item_list.csv 
 # 구분자 : comma(“,”), 167 Rows, 4 Columns, UTF-8 인코
 # =============================================================================
 #
@@ -395,10 +470,13 @@ Created on 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
 
+mart=pd.read_csv('Dataset_15_Mart_POS.csv ')
+item=pd.read_csv('Dataset_15_item_list.csv ')
 
-
-
+mart.info()
+item.info()
 #%%
 
 # =============================================================================
@@ -406,16 +484,18 @@ Created on 2021
 # 제품의 판매 개수는? (답안 예시) 1
 # =============================================================================
 
+mart.groupby('Date').count().idxmax() # 2015-01-21
 
+q1=mart[mart.Date=='2015-01-21'].groupby('itemDescription').count()['Date']
 
+q1.idxmax()
 
+q1[q1.index=='soda']
 
+# 답: 7
 
-
-
-
-
-
+top_date=mart.Date.value_counts().idxmax()
+mart[mart.Date==top_date].itemDescription.value_counts().nlargest(1)
 
 
 #%%
@@ -433,18 +513,41 @@ Created on 2021
 # =============================================================================
 
 
+q2=item.copy()
+q2.columns=['prod_id', 'itemDescription', 'alcohol', 'frozen']
+
+q2_m=mart.copy()
+q2=pd.merge(q2_m, q2, how='inner', on='itemDescription')
 
 
+# ---------------------
 
+q2=mart.copy()
 
+# q2['month']=q2.Date.apply(lambda x: str(x).split('-')[1])
+# q2['day']=q2.Date.apply(lambda x: str(x).split('-')[2])
 
+q2['month']=pd.to_datetime(q2.Date).dt.month # format='%Y-%m-%d'
+q2['day']=pd.to_datetime(q2.Date).dt.day_name(locale='ko_kr')
+q2['weekday']=q2['day'].isin(['금요일','토요일'])+0
 
+merge1=pd.merge(q2, item, left_on='itemDescription', right_on= 'prod_nm', how='left')
 
+# (참고)
+# import locale
+# locale.locale_alias
 
+merge2=merge1[merge1.month.isin([1,2,3])]
 
+q2_table=pd.pivot_table(merge2, index='Date', columns='weekday',
+                        values='alcohol', aggfunc='sum')
 
+from scipy.stats import ttest_ind
+q2_out=ttest_ind(q2_table[1].dropna(), q2_table[0].dropna(), equal_var=False)
 
+round(q2_out[1], 2)
 
+# 답: 0.02
 
 #%%
 
@@ -461,15 +564,36 @@ Created on 2021
 # from statsmodels.stats.anova import anova_lm
 # =============================================================================
 
+# (1) 주력상품
+
+top10_list=mart.itemDescription.value_counts().nlargest(10).index
 
 
+# (2) 일자별 주력상품 목록 추출
+
+q3=q2[q2.itemDescription.isin(top10_list)]
+len(q3) # 7866
+len(q2) # 20488
+
+# (3) 일자별 주력상품 수 산출
+q3_tab=pd.pivot_table(q3, index=['Date', 'day'],
+                      values='itemDescription',
+                      aggfunc='count').reset_index()
+
+q3_tab=q3.groupby(['Date', 'day']).apply(len).reset_index()
+
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 
+aov=ols('itemDescription~day', data=q3_tab).fit()
+q3_out=anova_lm(aov)
+
+round(q3_out['PR(>F)'][0], 2)
 
 
-
-
-
+# 답: 0.52
 
 
 

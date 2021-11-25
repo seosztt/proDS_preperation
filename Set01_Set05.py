@@ -625,7 +625,15 @@ temp['TIME'].values.reshape(-1,1).shape
 # from sklearn.tree import export_graphviz
 # import pydot
 
+import pandas as pd
 
+data5=pd.read_csv('DataSet_05.csv', na_values=[' ', ''])
+data5.info()
+data5.columns
+
+# ['ID', 'Age', 'Age_gr', 'Gender', 'Work_Experience', 'Family_Size',
+#        'Ever_Married', 'Graduated', 'Profession', 'Spending_Score', 'Var_1',
+#        'Segmentation']
 #%%
 
 # =============================================================================
@@ -635,10 +643,10 @@ temp['TIME'].values.reshape(-1,1).shape
 # (String 타입 변수의 경우 White Space(Blank)를 결측으로 처리한다) (답안 예시) 123
 # =============================================================================
 
+data5.isnull().sum().sum()
+data5.isna().sum().sum()
 
-
-
-
+# 답: 1166
 
 #%%
 
@@ -649,10 +657,19 @@ temp['TIME'].values.reshape(-1,1).shape
 # (답안 예시) 0.2345, N
 # =============================================================================
 
+# (1) 결측치 제거
+q2=data5.copy()
+q2=q2.dropna()
 
+# (2) 빈도표 작성
+q2_tab=pd.crosstab(index=q2.Gender, columns=q2.Segmentation)
 
+# (3) 카이제곱 검정
+from scipy.stats import chi2_contingency
+q2_out=chi2_contingency(q2_tab)
+q2_out[1] < 0.05
 
-
+# 답: 0.0031, Y
 #%%
 
 # =============================================================================
@@ -672,6 +689,53 @@ temp['TIME'].values.reshape(-1,1).shape
 # 기술하시오.
 # (답안 예시) 0.12
 # =============================================================================
+
+
+# ['ID', 'Age', 'Age_gr', 'Gender', 'Work_Experience', 'Family_Size',
+#        'Ever_Married', 'Graduated', 'Profession', 'Spending_Score', 'Var_1',
+#        'Segmentation']
+from sklearn.model_selection import train_test_split
+from sklearn import metrics
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import export_graphviz
+import pydot
+
+q3=data5.dropna()
+
+q3=q3[q3.Segmentation.isin(['A','D'])]
+
+train, test = train_test_split(q3, test_size=0.3, random_state=123)
+
+
+x_list=['Age_gr', 'Gender', 'Work_Experience', 'Family_Size',
+        'Ever_Married', 'Graduated','Spending_Score']
+dt=DecisionTreeClassifier(criterion='gini', max_depth=7, random_state=123)
+
+dt.fit(train[x_list], train['Segmentation'])
+
+pred=dt.predict(test[x_list])
+
+from sklearn.metrics import accuracy_score
+
+accuracy_score(test['Segmentation'], pred)
+
+q3_out=dt.score(test[x_list], test.Segmentation)
+# 0.6807116104868914
+
+# 답: 0.68
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

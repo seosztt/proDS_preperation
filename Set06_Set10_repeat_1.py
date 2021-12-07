@@ -41,10 +41,7 @@ Created on 2021
 # =============================================================================
 
 import pandas as pd
-
-data6=pd.read_csv('DataSet_06.csv')
-data6.info()
-data6.columns
+data6=pd.read_csv('Dataset_06.csv')
 
 #%%
 
@@ -54,13 +51,12 @@ data6.columns
 # 소수점 이하는 버리고 정수부만 기술하시오. (답안 예시) 1234567
 # =============================================================================
 
-q1=data6.copy()
-abs(q1[q1.waterfront==0]['price'].mean()-q1[q1.waterfront==1]['price'].mean())
+data6[data6['waterfront']==1]['price'].mean() - data6[data6['waterfront']==0]['price'].mean()
+
+
 
 
 # 답: 1167272
-
-
 
 #%%
 
@@ -71,22 +67,14 @@ abs(q1[q1.waterfront==0]['price'].mean()-q1[q1.waterfront==1]['price'].mean())
 # 
 # =============================================================================
 
-q2=data6.copy()
+data6.columns
 
-x_list=['price', 'bedrooms', 'bathrooms', 'sqft_living',
-        'sqft_lot', 'floors', 'yr_built']
-
-q2[x_list].corr()['price']
-
-
-
+data6[['price', 'bedrooms', 'bathrooms', 'sqft_living', 'sqft_lot', 'floors', 'yr_built']].corr()
 
 
 # 답: sqft_living, yr_built
 
-q2=data6[x_list].corr().drop('price')['price'].abs()
-q2.idxmax()
-q2.idxmin()
+
 #%%
 
 # =============================================================================
@@ -103,48 +91,28 @@ q2.idxmin()
 # from sklearn.linear_model import LinearRegression
 # from statsmodels.formula.api import ols
 # =============================================================================
-import pandas as pd
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from statsmodels.formula.api import ols
 
 q3=data6.copy()
+# q3=q3.drop(['id', 'date', 'zipcode'], axis=1)
 
 q3.columns
-
-x_list=['bedrooms', 'bathrooms', 'sqft_living',
+x_list = ['bedrooms', 'bathrooms', 'sqft_living',
        'sqft_lot', 'floors', 'waterfront', 'view', 'condition', 'grade',
        'sqft_above', 'sqft_basement', 'yr_built', 'yr_renovated',
        'sqft_living15', 'sqft_lot15']
-
-lr=LinearRegression(fit_intercept=True)
-lr.fit(q3[x_list], q3['price'])
-
-lr.coef_
-
-ols1=ols('price ~'+'+'.join(x_list), q3).fit()
-ols1.summary()
-
-# 답: 13, 2
-
-x_list=data6.columns.drop(['id','date','zipcode','price'])
-
 from statsmodels.formula.api import ols
 
-form = 'price~'+'+'.join(x_list)
+formula = 'price~' + '+'.join(x_list)
+ols1 = ols(formula, q3).fit()
+ols1.summary()
 
-ols1=ols(form, q3).fit()
+q3_out=ols1.pvalues.drop('Intercept')
+q3_out2= q1_out[q1_out < 0.05].index
+len(q3_out2)
 
-q3_out1=ols1.pvalues.drop('Intercept')
-
-reject_var_list=q3_out1[q3_out1 < 0.05].index
-
-len(reject_var_list) # 13
-
-q3_out2 = ols1.params[reject_var_list]
-
-q3_out2[q3_out2 < 0] # 2
-
+len(q3_out2[ols1.params[q3_out2] < 0])
+sum(ols1.params[q3_out2] < 0)
+# 답: 13, 2
 #%%
 
 # =============================================================================
@@ -180,8 +148,6 @@ q3_out2[q3_out2 < 0] # 2
 # Solver = ‘liblinear’, random_state = 12
 # =============================================================================
 
-data7=pd.read_csv('DataSet_07.csv')
-data7.info()
 
 #%%
 
@@ -193,14 +159,11 @@ data7.info()
 # 자리에서 반올림하여 셋째 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
-data7.columns
-var_list=['Chance_of_Admit', 'GRE', 'TOEFL', 'CGPA']
-q1=data7[var_list].corr().drop('Chance_of_Admit')['Chance_of_Admit'].abs()
-
-round(q1.max(), 3)
 
 
-# 답: 0. 873
+
+
+
 
 
 #%%
@@ -215,21 +178,15 @@ round(q1.max(), 3)
 # (답안 예시) 1.23
 # =============================================================================
 
-q2=data7.copy()
-
-m=q2.GRE.mean()
-
-g1=q2[q2.GRE >= m]['CGPA']
-g2=q2[q2.GRE < m]['CGPA']
-
-from scipy.stats import ttest_ind
-
-q2_out=ttest_ind(g1, g2, equal_var=True) # equal_var -> 등분산 가정?
-
-round(q2_out.statistic, 2)
 
 
-# 답: 19.44
+
+
+
+
+
+
+
 
 #%%
 
@@ -245,25 +202,12 @@ round(q2_out.statistic, 2)
 # (답안 예시) abc, 0.12
 # =============================================================================
 
-from sklearn.linear_model import LogisticRegression
-# Solver = ‘liblinear’, random_state = 12
 
 
-q3=data7.copy()
 
-q3['label']=np.where(q3.Chance_of_Admit > 0.5, 1, 0)
-q3['label']=(q3.Chance_of_Admit > 0.5) + 0 # +0을 해주면 True, False가 1, 0으로 바뀜
 
-x_list=q3.columns.drop(['Serial_No', 'label', 'Chance_of_Admit'])
-# Chance_of_Admit은 제외하라는 말 없었어도 제외해야 한다. label만들때 사용했기 때문.
 
-lr=LogisticRegression(solver = 'liblinear', random_state = 12, fit_intercept=False)
-lr.fit(q3[x_list], q3.label)
 
-q3_out=pd.Series(abs(lr.coef_).reshape(-1), index=x_list)
-q3_out.nlargest(1)
-
-# 답: CGPA, 1.96
 #%%
 
 # =============================================================================
@@ -485,12 +429,7 @@ q3_out.nlargest(1)
 # #3
 # from sklearn.linear_model import LinearRegression
 # =============================================================================
-import pandas as pd
 
-data10=pd.read_csv('DataSet_10.csv')
-data10.info()
-
-data10=data10.dropna(axis=1, how='all')
 
 #%%
 
@@ -503,22 +442,12 @@ data10=data10.dropna(axis=1, how='all')
 # =============================================================================
 
 
-q1=data10[data10.previous_owners == 1]
-q1=q1[q1.engine_power == 51]
 
-len(data10) # 1538
-len(q1) # 1312
 
-q1_tab=pd.pivot_table(q1,
-                      index='model',
-                      values=['age_in_days', 'km'])
-                      # aggfunc=['km':'mean', 'age_in_days':'sum'])
 
-q1_tab['km_per_day']=q1_tab['km']/q1_tab['age_in_days'] # 일평균
 
-q1_out=q1_tab['km_per_day'].min()/q1_tab['km_per_day'].max()
 
-# 답: 0.97
+
 
 
 
@@ -536,24 +465,13 @@ q1_out=q1_tab['km_per_day'].min()/q1_tab['km_per_day'].max()
 # =============================================================================
 
 
-q2=data10.copy()
-q2['km_per_day']=q2['km']/q2['age_in_days']
 
 
-min_label=q1_tab['km_per_day'].idxmin() # 'sport'
-max_label=q1_tab['km_per_day'].idxmax() # 'lounge'
 
-min_group=q2[q2.model==min_label]['km_per_day']
-max_group=q2[q2.model==max_label]['km_per_day']
 
-# (3) 독립인 2표본 t 검정
-from scipy.stats import ttest_ind
 
-q2_out=ttest_ind(max_group, min_group, equal_var=True)
 
-q2_out.pvalue
 
-# 답: 0.13, N
 
 #%%
 
@@ -567,28 +485,17 @@ q2_out.pvalue
 # =============================================================================
 # model = pop이고 이전 소유자수가 2명인 데이터만을 이용하여 회귀모델을 생성하시오.
 
-model_list=data10.model.unique()
 
-q3=data10[data10.previous_owners == 2]
 
-from sklearn.linear_model import LinearRegression
 
-x_list=['engine_power','age_in_days', 'km']
-for i in model_list:
-    temp=q3[q3.model==i]
-    globals()['lm_'+i]=LinearRegression().fit(temp[x_list], temp['price'])
 
-new_data1=[[51,400,9500]]
-new_data2=pd.DataFrame({'engine_power':[50],
-                       'age_in_days':[51],
-                       'km':[9500]})
 
-lm_pop.predict(new_data1)
-lm_pop.predict(new_data2)
 
-# 답: 10367
 
-# q3=data10[(data10.previous_owners == 2) & (q3.model == 'pop')]
+
+
+
+
 
 
 

@@ -541,14 +541,21 @@ q1_tab['km_per_day'].min()/q1_tab['km_per_day'].max()
 # (답안 예시) 0.23, Y
 # =============================================================================
 
+# 가장 큰 값 모델: lounge
+# 가장 낮은 값 모델: sport
 
+q2=data10.copy()
+q2['km_per_day']=q2['km']/q2['age_in_days']
 
+group1=q2[q2.model=='lounge']['km_per_day']
+group0=q2[q2.model=='sport']['km_per_day']
 
+from scipy.stats import ttest_ind
 
+t, p = ttest_ind(group0, group1, equal_var=True)
+p
 
-
-
-
+# 답: 0.13, N
 
 #%%
 
@@ -562,12 +569,18 @@ q1_tab['km_per_day'].min()/q1_tab['km_per_day'].max()
 # =============================================================================
 # model = pop이고 이전 소유자수가 2명인 데이터만을 이용하여 회귀모델을 생성하시오.
 
+q3=data10.copy()
 
+q3=q3[q3.model=='pop']
+q3=q3[q3.previous_owners==2]
 
+from statsmodels.formula.api import ols
 
+ols10 = ols('price ~ engine_power + age_in_days + km', q3).fit()
 
+ols10.predict({'engine_power':51, 'age_in_days':400, 'km':9500})
 
-
+# 답: 10367
 
 
 

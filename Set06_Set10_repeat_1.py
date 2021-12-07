@@ -147,8 +147,9 @@ sum(ols1.params[q3_out2] < 0)
 # from sklearn.linear_model import LogisticRegression
 # Solver = ‘liblinear’, random_state = 12
 # =============================================================================
-
-
+import pandas as pd
+data7 = pd.read_csv('Dataset_07.csv')
+data7.info()
 #%%
 
 # =============================================================================
@@ -159,12 +160,10 @@ sum(ols1.params[q3_out2] < 0)
 # 자리에서 반올림하여 셋째 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
+q1=data7.copy()
+q1[['GRE', 'TOEFL', 'CGPA', 'Chance_of_Admit']].corr()['Chance_of_Admit']
 
-
-
-
-
-
+# 답: 0.8733
 
 #%%
 
@@ -178,14 +177,17 @@ sum(ols1.params[q3_out2] < 0)
 # (답안 예시) 1.23
 # =============================================================================
 
+q2=data7.copy()
+GRE_m=q2.GRE.mean()
 
+group0=q2[q2.GRE < GRE_m]['CGPA']
+group1=q2[q2.GRE >= GRE_m]['CGPA']
 
+from scipy.stats import ttest_ind
 
-
-
-
-
-
+t, p = ttest_ind(group1, group0, equal_var=True)
+t
+# 답: 19.44 
 
 
 #%%
@@ -202,12 +204,24 @@ sum(ols1.params[q3_out2] < 0)
 # (답안 예시) abc, 0.12
 # =============================================================================
 
+import numpy as np
 
+q3=data7.copy()
+q3['Label'] = np.where(q3.Chance_of_Admit > 0.5, 1, 0)
 
+X=q3.drop(['Serial_No','Label', 'Chance_of_Admit'], axis=1)
+y=q3['Label']
 
+from sklearn.linear_model import LogisticRegression
 
+lr=LogisticRegression(fit_intercept=False, random_state=123)
+lr.fit(X, y)
 
+q3_out = pd.Series(dict(zip(X.columns,lr.coef_[0]))).abs()
+q3_out.idxmax()
+q3_out.nlargest(1)
 
+# 답: CGPA, 2.00
 #%%
 
 # =============================================================================
@@ -239,17 +253,18 @@ sum(ols1.params[q3_out2] < 0)
 # =============================================================================
 
 #%%
-
+import pandas as pd
+data8=pd.read_csv('Dataset_08.csv')
+data8.info()
 # =============================================================================
 # 1.각 주(State)별 데이터 구성비를 소수점 둘째 자리까지 구하고, 알파벳 순으로
 # 기술하시오(주 이름 기준).
 # (답안 예시) 0.12, 0.34, 0.54
 # =============================================================================
+data8.State.unique()
+data8.groupby('State').count()
 
-
-
-
-
+# 답: 0.34, 0.32, 0.34
 
 #%%
 
@@ -258,13 +273,15 @@ sum(ols1.params[q3_out2] < 0)
 # 차이값은 소수점 이하는 버리고 정수부분만 기술하시오. (답안 예시) 1234
 # =============================================================================
 
+q2=data8.copy()
 
 
+q2[q2.State == 'California']['Profit'].mean()
+q2[q2.State == 'New York']['Profit'].mean()
+q2[q2.State == 'Florida']['Profit'].mean()
+q2[q2.State == 'Florida']['Profit'].mean() - q2[q2.State == 'California']['Profit'].mean()
 
-
-
-
-
+# 답: 14868
 #%%
 
 # =============================================================================
@@ -276,17 +293,22 @@ sum(ols1.params[q3_out2] < 0)
 # (답안 예시) ABC, 1.56
 # =============================================================================
 
+q3=data8.copy()
+from sklearn.linear_model import LinearRegression
 
+X_list=['RandD_Spend', 'Administration', 'Marketing_Spend']
 
+State_list = q3.State.unique()
+result=[]
+for i in State_list:
+    temp=q3[q3.State == i]
+    lm=LinearRegression().fit(temp[X_list], temp.Profit)
+    pred=lm.predict(temp[X_list])
+    out=((abs(temp.Profit - pred) / temp.Profit)*100/len(pred)).sum()
+    result.append([i,out])
+result
 
-
-
-
-
-
-
-
-
+# 답: Florida, 5.71
 #%%
 
 # =============================================================================
@@ -318,6 +340,9 @@ sum(ols1.params[q3_out2] < 0)
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+data9=pd.read_csv('Dataset_09.csv')
+data9.info()
 # =============================================================================
 # (참고)
 # #1
@@ -339,8 +364,9 @@ sum(ols1.params[q3_out2] < 0)
 # 총 몇 개인가? (답안 예시) 1
 # =============================================================================
 
+data9.isna().sum().sum()
 
-
+# 답: 5
 
 
 
@@ -357,16 +383,29 @@ sum(ols1.params[q3_out2] < 0)
 # (답안 예시) 123
 # =============================================================================
 
+q2=data9.copy()
 
+q2=q2.dropna()
+q2.columns
 
+import numpy as np
+q2['Age_gr']=np.where(q2.Age <=20, 10,
+                      np.where(q2.Age <=30, 20,
+                               np.where(q2.Age <=40, 30,
+                                        np.where(q2.Age <=50, 40,
+                                                 np.where(q2.Age <=60, 50, 60)))))
+q2.satisfaction
 
+var_list=['Age_gr', 'Gender', 'Customer_Type', 'Class']
+from scipy.stats import chi2_contingency
+result = []
+for i in var_list:
+    temp=pd.crosstab(q2[i], q2['satisfaction'])
+    chi2, p, dof, ef = chi2_contingency(temp, correction = False)
+    result.append([i, chi2, p])
+result
 
-
-
-
-
-
-
+# 답: 1069
 
 #%%
 
@@ -383,16 +422,26 @@ sum(ols1.params[q3_out2] < 0)
 # - 예측 정확도를 측정하고 dissatisfied의 f1 score를 소수점 넷째 자리에서 반올림하여
 # 소수점 셋째 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
+from sklearn.model_selection import train_test_split
+q3=data9.copy()
+q3=q3.dropna()
 
+X_list = ['Flight_Distance', 'Seat_comfort', 'Food_and_drink', 'Inflight_wifi_service', 
+'Inflight_entertainment','Onboard_service', 'Leg_room_service', 'Baggage_handling',
+'Cleanliness', 'Departure_Delay_in_Minutes', 'Arrival_Delay_in_Minutes']
 
+train, test = train_test_split(q3, test_size=0.3, random_state=123)
 
+from sklearn.linear_model import LogisticRegression
 
+lr=LogisticRegression(random_state=123).fit(train[X_list], train.satisfaction)
 
+from sklearn.metrics import f1_score
 
+pred=lr.predict(test[X_list])
+f1_score(test.satisfaction, pred, pos_label='dissatisfied')
 
-
-
-
+# 답: 0.749
 
 
 
@@ -430,7 +479,11 @@ sum(ols1.params[q3_out2] < 0)
 # from sklearn.linear_model import LinearRegression
 # =============================================================================
 
+import pandas as pd
+data10=pd.read_csv('Dataset_10.csv')
+data10.info()
 
+data10=data10.dropna(axis=1, how='all')
 #%%
 
 # =============================================================================
@@ -441,18 +494,42 @@ sum(ols1.params[q3_out2] < 0)
 # (모델별 평균 → 일평균 → 최대최소 비율 계산) (답안 예시) 0.12
 # =============================================================================
 
+q1=data10.copy()
 
+q1.columns
 
+a=q1.previous_owners==1
+b=q1.engine_power==51
 
+q1[a & b].model.unique()
+q1=q1[a & b]
 
+q1['km_per_day']=q1['km']/q1['age_in_days']
 
+l=q1[q1.model=='lounge']['km_per_day'].mean()
+p=q1[q1.model=='pop']['km_per_day'].mean()
+s=q1[q1.model=='sport']['km_per_day'].mean()
 
+p/l
 
+# ---------------------------
+q1=data10.copy()
 
+q1.columns
 
+a=q1.previous_owners==1
+b=q1.engine_power==51
 
+q1[a & b].model.unique()
+q1=q1[a & b]
 
+q1_tab=pd.pivot_table(q1,index='model', values=['km', 'age_in_days'])
 
+q1_tab['km_per_day'] = q1_tab['km'] / q1_tab['age_in_days']
+
+q1_tab['km_per_day'].min()/q1_tab['km_per_day'].max()
+
+# 답: 0.97
 #%%
 
 # =============================================================================

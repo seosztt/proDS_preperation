@@ -23,10 +23,9 @@ Created on 2021
 # year / 년도 / Double
 # =============================================================================
 # =============================================================================
-
 import pandas as pd
 
-data11 = pd.read_csv('Dataset_11.csv')
+data11=pd.read_csv('DataSet_11.csv')
 data11.info()
 #%%
 
@@ -38,18 +37,12 @@ data11.info()
 # 활용하시오.(답안 예시) 1
 # =============================================================================
 
-data11.columns
-len(data11.Country.unique())
-
-data11.year.unique()
-
 q1=data11.copy()
-q1_out = q1.Country.value_counts()
-
-len(q1_out[q1_out == 3])
-len(data11.Country.unique()) - len(q1_out[q1_out == 3])
+q1=q1.Country.value_counts()
+((q1<3) +0).sum()
 # 답: 20
 
+country_list=q1[q1==3].index
 #%%
 
 # =============================================================================
@@ -62,16 +55,15 @@ len(data11.Country.unique()) - len(q1_out[q1_out == 3])
 # 12월까지의 매출 총액을 의미한다. (답안 예시) Korea, Japan, China
 # =============================================================================
 
-q1_out = q1_out[q1_out == 3]
-q1_out.index
+q2=data11.copy()
 
-q2=data11[data11.Country.isin(q1_out.index)]
-q2=pd.pivot_table(q2, index='Country', columns='year', values='Happiness_Score')
+q2=q2[q2.Country.isin(country_list)]
 
-q2['ratio'] = (q2[2017] - q2[2015]) / 2
+q2=pd.pivot_table(q2, index='Country', values='Happiness_Score', columns='year')
 
-q2.sort_values(by='ratio')
-q2.nlargest(3, 'ratio')
+q2['rate']=(q2[2017]-q2[2015])/2
+
+q2.sort_values(by='rate').nlargest(3, 'rate')
 
 # 답: Latvia, Romania, Togo
 #%%
@@ -88,27 +80,15 @@ q2.nlargest(3, 'ratio')
 # from statsmodels.formula.api import ols
 # from statsmodels.stats.anova import anova_lm
 
-from scipy.stats import f_oneway
-from statsmodels.formula.api import ols 
-from statsmodels.stats.anova import anova_lm
-from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
-basetable=data11[data11.Country.isin(q1_out.index)]
-q3=pd.pivot_table(basetable, index='Country', columns='year', values='Happiness_Score')
 
-f_oneway(q3[2015], q3[2016], q3[2017])
-# F_onewayResult(statistic=0.004276725037689305, pvalue=0.9957324489944479)
 
-ols1 = ols('Happiness_Score ~ C(year)', basetable).fit()
-anova_lm(ols1)
 
-# 답: 0.0042
 
-comp_out=\
- pairwise_tukeyhsd(basetable['Happiness_Score'],
-                   basetable['year'])
 
-print(comp_out)
+
+
+
 
 #%%
 
@@ -133,8 +113,6 @@ print(comp_out)
 # =============================================================================
 # =============================================================================
 
-data12=pd.read_csv('DataSet_12.csv')
-data12.info()
 
 #%%
 
@@ -144,10 +122,8 @@ data12.info()
 # - 상관계수는 반올림하여 소수점 셋째 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
-data12.corr()
 
 
-# 답: 0.797
 
 
 
@@ -161,21 +137,9 @@ data12.corr()
 # - 유의 확률은 반올림하여 소수점 셋째 자리까지 기술한다. (답안 예시) 0.123
 # =============================================================================
 
-data12.Education_Level.unique()
 
-q2=data12.copy()
-from scipy.stats import ttest_ind
-import numpy as np
 
-q2['edu_gr']=np.where(q2.Education_Level.isin(['석사','박사']), 1 ,0)
 
-# q2['group']=q2['Education_Level'].isin(['석사', '박사'])+0
-
-g1=q2[q2.edu_gr==1]['Read_Book_per_Year']
-g0=q2[q2.edu_gr==0]['Read_Book_per_Year']
-ttest_ind(g1, g0, equal_var=True)
-
-# 답: 0.269
 
 
 #%%
@@ -193,21 +157,13 @@ ttest_ind(g1, g0, equal_var=True)
 # from statsmodels.formula.api import ols
 
 
-q3=data12.copy()
-q3['Income_Range']
-
-q3=q3[~(q3.Education_Level == '고졸')]
-q3=q3[~(q3.Income_Range == 'X')]
-# 수치형 변수: Age, Dependent_Count
-
-from statsmodels.formula.api import ols
-
-ols12=ols('Read_Book_per_Year~Age+Dependent_Count', q3).fit()
-
-ols12.summary()
 
 
-# 답: 8
+
+
+
+
+
 
 
 
@@ -242,10 +198,7 @@ ols12.summary()
 # =============================================================================
 # =============================================================================
 
-import pandas as pd
-train=pd.read_csv('DataSet_13_train.csv')
-test=pd.read_csv('DataSet_13_test.csv')
-train.info()
+
 #%%
 
 # =============================================================================
@@ -255,10 +208,9 @@ train.info()
 # =============================================================================
 
 
-train[['experience', 'last_new_job']][train.gender=='Male'].corr()
-train[['experience', 'last_new_job']][train.gender=='Female'].corr()
 
-# 답: 0.45
+
+
 
 #%%
 
@@ -272,22 +224,15 @@ train[['experience', 'last_new_job']][train.gender=='Female'].corr()
 # - p-value는 반올림하여 소수점 둘째 자리까지 기술하시오. (답안 예시) 0.12
 # =============================================================================
 
-train.major_discipline.unique()
-q2_train=train[train.major_discipline=='STEM']
-train.city_development_index.max()
 
-np.percentile(train.city_development_index, [85], interpolation='lower')
 
-sum(train.city_development_index == 0.92)
 
-q2_train=q2_train[train.city_development_index > 0.92]
 
-from scipy.stats import chi2_contingency
 
-chi2, p, *_ = chi2_contingency(pd.crosstab(q2_train.relevent_experience, q2_train.target))
-p
 
-# 답: 0.64
+
+
+
 #%%
 
 
@@ -305,23 +250,18 @@ p
 # (참고)
 # from sklearn.tree import DecisionTreeClassifier
 # random_state = 123
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
 
-train.info()
-X_list=['city_development_index', 'relevent_experience', 'enrolled_university',
-        'experience', 'last_new_job', 'training_hours']
 
-dtc=DecisionTreeClassifier(random_state=123)
 
-dtc.fit(train[X_list], train.target)
-pred=dtc.predict(test[X_list])
 
-accuracy_score(test.target, pred)
 
-dtc.score(test[X_list], test.target)
 
-# 답: 0.67
+
+
+
+
+
+
 
 
 
@@ -351,8 +291,7 @@ dtc.score(test[X_list], test.target)
 # =============================================================================
 # =============================================================================
 
-data14=pd.read_csv('DataSet_14.csv')
-data14.info()
+
 #%%
 
 # =============================================================================
@@ -361,14 +300,12 @@ data14.info()
 # - 리뷰 작성 비율은 리뷰 개수에 구독자 수를 나눈 값이다. (답안 예시) 1
 # =============================================================================
 
-q1=data14.copy()
-
-q1['total_price']=q1['price'] * q1['subscribers']
-q1['reviewed_rate'] = q1['reviews']/q1['subscribers']
-q1[(q1.total_price >= 10000) & (q1.reviewed_rate >= 0.1)]
 
 
-# 답: 59
+
+
+
+
 
 
 #%%
@@ -380,17 +317,17 @@ q1[(q1.total_price >= 10000) & (q1.reviewed_rate >= 0.1)]
 # - 상관계수는 반올림하여 소수점 둘째 자리까지 기술하시오. (답안 예시) 0.12
 # =============================================================================
 
-data14.info()
-data14.subject.unique()
-data14.published.unique()
 
-q2=data14.copy()
-q2['published']=pd.to_datetime(q2['published'])
-q2['year']=q2['published'].dt.year
 
-q2[(q2.year==2016) & (q2.subject=='Web Development')].corr()
 
-# 답: 0.03
+
+
+
+
+
+
+
+
 #%%
 
 # =============================================================================
@@ -405,18 +342,19 @@ q2[(q2.year==2016) & (q2.subject=='Web Development')].corr()
 # from statsmodels.stats.anova import anova_lm
 # =============================================================================
 
-q3=q2.copy()
-
-q3['total_price']=q3['price'] * q3['subscribers']
-q3['reviewed_rate'] = q3['reviews']/q3['subscribers']
-from statsmodels.formula.api import ols
-ols14=ols('reviewed_rate ~ C(year)',q3).fit()
-
-from statsmodels.stats.anova import anova_lm
-anova_lm(ols14)
 
 
-# 답: 18.5
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -454,8 +392,8 @@ anova_lm(ols14)
 # =============================================================================
 # =============================================================================
 
-pos=pd.read_csv('Dataset_15_Mart_POS.csv')
-item=pd.read_csv('Dataset_15_item_list.csv')
+
+
 
 
 #%%
@@ -465,17 +403,16 @@ item=pd.read_csv('Dataset_15_item_list.csv')
 # 제품의 판매 개수는? (답안 예시) 1
 # =============================================================================
 
-pos.info()
-
-pos.groupby('Date').count().idxmax()
-
-pos[pos.Date == '2015-01-21'].groupby('itemDescription').count()['Member_number'].nlargest(1)
 
 
 
 
 
-# 답: 7
+
+
+
+
+
 
 
 #%%
@@ -492,28 +429,20 @@ pos[pos.Date == '2015-01-21'].groupby('itemDescription').count()['Member_number'
 # - p-value는 반올림하여 소수점 둘째 자리까지 기술하시오. (답안 예시) 0.12
 # =============================================================================
 
-q2=pos.copy()
-
-q2['month']=pd.to_datetime(q2.Date).dt.month
-
-import locale
-locale.locale_alias
-q2['day'] = pd.to_datetime(q2.Date).dt.day_name(locale='ko_kr')
-q2['fri_sat']=q2.day.isin(['금요일', '토요일'])+0
-
-merge15=pd.merge(q2, item, left_on='itemDescription', right_on='prod_nm', how='left')
-merge15=merge15[merge15.month.isin([1,2,3])]
 
 
-q2_tab=pd.pivot_table(merge15, values='alcohol', index='Date', columns='fri_sat', aggfunc='sum')
 
-g0=q2_tab[0].dropna()
-g1=q2_tab[1].dropna()
 
-from scipy.stats import ttest_ind
-ttest_ind(g0, g1,equal_var=False)
 
-# 답: 0.02
+
+
+
+
+
+
+
+
+
 #%%
 
 # =============================================================================
@@ -529,48 +458,28 @@ ttest_ind(g0, g1,equal_var=False)
 # from statsmodels.stats.anova import anova_lm
 # =============================================================================
 
-pos.groupby('itemDescription').count()['Date'].nlargest(10).index
-
-top10_list=['whole milk', 'other vegetables', 'rolls/buns', 'sausage', 'soda',
-       'yogurt', 'tropical fruit', 'root vegetables', 'citrus fruit',
-       'frankfurter']
-
-from statsmodels.formula.api import ols
-from statsmodels.stats.anova import anova_lm
-
-q3=pos.copy()
-
-q3['month']=pd.to_datetime(q3.Date).dt.month
-
-import locale
-locale.locale_alias
-q3['day'] = pd.to_datetime(q3.Date).dt.day_name(locale='ko_kr')
-q3['fri_sat']=q3.day.isin(['금요일', '토요일'])+0
-
-merge15_3=pd.merge(q3, item, left_on='itemDescription', right_on='prod_nm', how='left')
 
 
-merge15_3.columns
-
-merge15_3.day
-top10_dataset=merge15_3[merge15_3.itemDescription.isin(top10_list)]
-
-q3_tab=top10_dataset.groupby('Date').count()[['itemDescription', 'day']]
 
 
-q3_tab['day']=pd.to_datetime(q3_tab.index).day_name(locale='ko_kr')
-
-aov=ols('itemDescription~C(day)', q3_tab).fit()
-anova_lm(aov)
-
-# 답: 0.52
 
 
-q3_tab=pd.pivot_table(top10_dataset, index=['Date', 'day'], values='itemDescription', aggfunc='count')
-q3_tab.reset_index()
 
-aov=ols('itemDescription~C(day)', q3_tab.reset_index()).fit()
-anova_lm(aov)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

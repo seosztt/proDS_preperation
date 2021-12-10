@@ -80,16 +80,16 @@ q2.sort_values(by='rate').nlargest(3, 'rate')
 # from statsmodels.formula.api import ols
 # from statsmodels.stats.anova import anova_lm
 
+q3=data11.copy()
+q3=q3[q3.Country.isin(country_list)]
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
+
+aov=ols('Happiness_Score~C(year)', q3).fit()
+anova_lm(aov)
 
 
-
-
-
-
-
-
-
-
+# 답: 0.0042
 #%%
 
 # =============================================================================
